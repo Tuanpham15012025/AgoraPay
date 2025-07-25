@@ -1,39 +1,32 @@
-import React, { useState } from 'react';
-import { initPi } from '../pi-sdk';
+// src/components/PiLogin.js
+import React, { useEffect } from 'react';
 
-function PiLogin() {
-  const [user, setUser] = useState(null);
+const PiLogin = () => {
+  useEffect(() => {
+    if (window?.Pi) {
+      window.Pi.init({
+        version: "2.0",
+        sandbox: true,
+      });
+    }
+  }, []);
 
   const handleLogin = async () => {
-    await initPi();
-    const scopes = ['username', 'payments'];
     try {
-      const user = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
-      setUser(user);
-      console.log("Authenticated user:", user);
+      const scopes = ["username", "payments"];
+      const authResult = await window.Pi.authenticate(scopes);
+      alert("Welcome " + authResult.user.username);
+      console.log("Authentication result:", authResult);
     } catch (err) {
       console.error("Login failed:", err);
     }
   };
 
-  const onIncompletePaymentFound = (payment) => {
-    console.log("Incomplete payment:", payment);
-  };
-
   return (
-    <div className="p-4 text-center">
-      <h2 className="text-xl mb-4">Pi Payment Login</h2>
-      {user ? (
-        <div>
-          <p>Welcome, {user.username}</p>
-        </div>
-      ) : (
-        <button onClick={handleLogin} className="bg-yellow-500 text-white px-4 py-2 rounded">
-          Login with Pi
-        </button>
-      )}
-    </div>
+    <button onClick={handleLogin} style={{ padding: '10px 20px', fontSize: '16px' }}>
+      Login with Pi
+    </button>
   );
-}
+};
 
 export default PiLogin;
