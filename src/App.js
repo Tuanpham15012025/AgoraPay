@@ -1,11 +1,11 @@
 import React from 'react';
 import PiLogin from './components/PiLogin';
+// Nếu bạn dùng PiAuth thay vì PiLogin, đổi lại dòng import trên
 
 function App() {
   return (
-    <div className="App" style={{ padding: '2rem', fontFamily: 'sans-serif', textAlign: 'center' }}>
-      <h1>AgoraPay</h1>
-      <p>Peer-to-Peer Pi Payments</p>
+    <div className="App">
+      <h1>Welcome to AgoraPay</h1>
       <PiLogin />
     </div>
   );
