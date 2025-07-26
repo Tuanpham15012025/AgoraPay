@@ -1,12 +1,15 @@
-import React from 'react';
-import PiLogin from './components/PiLogin';
-// Nếu bạn dùng PiAuth thay vì PiLogin, đổi lại dòng import trên
+import React, { useEffect } from "react";
+import { initPiSdk } from "./pi/initPi";
 
 function App() {
+  useEffect(() => {
+    initPiSdk(); // Khởi tạo SDK khi app mount
+  }, []);
+
   return (
-    <div className="App">
+    <div>
       <h1>Welcome to AgoraPay</h1>
-      <PiLogin />
+      {/* Các thành phần khác */}
     </div>
   );
 }
