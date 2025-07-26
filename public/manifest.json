@@ -1,11 +1,6 @@
 {
-<<<<<<< HEAD
   "short_name": "AgoraPay",
   "name": "AgoraPay - Peer-to-Peer Pi Payments",
-=======
-  "short_name": "React App",
-  "name": "Create React App Sample",
->>>>>>> 621dbde (Initial commit for AgoraPay)
   "icons": [
     {
       "src": "favicon.ico",
@@ -25,10 +20,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-<<<<<<< HEAD
   "theme_color": "#3d5afe",
-=======
-  "theme_color": "#000000",
->>>>>>> 621dbde (Initial commit for AgoraPay)
   "background_color": "#ffffff"
 }
