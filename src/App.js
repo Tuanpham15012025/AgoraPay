@@ -1,44 +1,36 @@
 // src/App.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 
 function App() {
   const [piUser, setPiUser] = useState(null);
 
+  // Hàm xử lý khi có giao dịch chưa hoàn tất
+  const onIncompletePaymentFound = (payment) => {
+    console.log("Incomplete payment found:", payment);
+  };
+
+  // Khởi tạo Pi SDK
+  useEffect(() => {
+    if (window.Pi) {
+      window.Pi.init({ version: "2.0" });
+    } else {
+      console.error("Pi SDK not found. Make sure you included the Pi JavaScript SDK script.");
+    }
+  }, []);
+
+  // Xử lý đăng nhập
   const handleLogin = async () => {
     try {
-      const scopes = ["username", "payments"];
-      const onIncompletePaymentFound = (payment) => {
-        console.log("Incomplete payment found:", payment);
-      };
-
+      const scopes = ["username", "payments"]; // Quyền muốn lấy
       const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
       console.log("Login success:", authResult);
       setPiUser(authResult.user);
+      alert(`Xin chào ${authResult.user.username}!`);
     } catch (error) {
       console.error("Login failed:", error);
     }
   };
-  useEffect(() => {
-  if (window.Pi) {
-    window.Pi.init({ version: "2.0" });
-  }
-}, []);
-  const loginWithPi = async () => {
-  try {
-    const scopes = ["username", "payments"]; // Quyền muốn lấy
-    const auth = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
-    console.log("Authenticated user:", auth);
-    alert(`Xin chào ${auth.user.username}!`);
-  } catch (err) {
-    console.error("Login failed", err);
-  }
-};
-
-const onIncompletePaymentFound = (payment) => {
-  console.log("Incomplete payment found:", payment);
-};
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-white flex flex-col items-center justify-center p-6">
@@ -57,10 +49,7 @@ const onIncompletePaymentFound = (payment) => {
           <li><strong>Phase 4:</strong> Launch Agora Marketplace and staking features</li>
         </ul>
       </div>
-  <div>
-  <h1>Pi Login Demo</h1>
-  <button onClick={loginWithPi}>Login with Pi</button>
-</div>
+
       {!piUser ? (
         <button
           onClick={handleLogin}
