@@ -19,6 +19,11 @@ function App() {
       console.error("Login failed:", error);
     }
   };
+  useEffect(() => {
+  if (window.Pi) {
+    window.Pi.init({ version: "2.0" });
+  }
+}, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-white flex flex-col items-center justify-center p-6">
