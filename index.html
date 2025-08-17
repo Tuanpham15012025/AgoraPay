@@ -3,12 +3,72 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgoraPay</title>
-    <!-- Pi Web SDK: provides global `window.Pi` in Pi Browser -->
+    <title>AgoraPay - Test Payment</title>
+    <!-- Pi Web SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <h2>AgoraPay Test</h2>
+    <button id="testPaymentBtn">💳 Test Payment 1π</button>
+    <pre id="result"></pre>
+
+    <script>
+      // Cấu hình app của bạn (thay bằng App ID thực tế trên Pi Developer Portal)
+      const APP_ID = "agorapay"; 
+
+      // Hàm log ra màn hình
+      function log(msg) {
+        document.getElementById("result").innerText += msg + "\n";
+      }
+
+      // Khi bấm nút "Test Payment"
+      document.getElementById("testPaymentBtn").addEventListener("click", async () => {
+        try {
+          // Đăng nhập trước để lấy thông tin user
+          const scopes = ['username', 'payments'];
+          const authResult = await window.Pi.authenticate(scopes, APP_ID);
+          log("✅ Auth success: " + JSON.stringify(authResult));
+
+          // Tạo payment request
+          const paymentData = {
+            amount: 1,
+            memo: "Test payment 1π via AgoraPay",
+            metadata: { type: "test" }
+          };
+
+          log("📤 Creating payment...");
+
+          // Gọi Pi SDK để tạo payment
+          const payment = await window.Pi.createPayment(paymentData, {
+            onReadyForServerApproval: async (paymentId) => {
+              log("⏳ Ready for server approval: " + paymentId);
+              await fetch("/api/create-payment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ paymentId })
+              });
+            },
+            onReadyForServerCompletion: async (paymentId, txid) => {
+              log("⏳ Ready for server completion: " + paymentId + " txid: " + txid);
+              await fetch("/api/complete-payment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ paymentId, txid })
+              });
+            },
+            onCancel: (paymentId) => {
+              log("❌ Payment cancelled: " + paymentId);
+            },
+            onError: (error, payment) => {
+              log("⚠️ Payment error: " + error + " payment: " + JSON.stringify(payment));
+            },
+          });
+
+          log("✅ Payment created: " + JSON.stringify(payment));
+        } catch (err) {
+          log("❌ Error: " + err.message);
+        }
+      });
+    </script>
   </body>
 </html>
