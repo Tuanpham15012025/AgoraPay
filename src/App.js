@@ -1,11 +1,10 @@
-// src/App.js
 import React, { useState, useEffect } from "react";
 import "./App.css";
+import TestPayment from "./components/TestPayment";
 
 function App() {
   const [piUser, setPiUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [paymentId, setPaymentId] = useState(null);
+  const [loadingLogin, setLoadingLogin] = useState(false);
 
   // Hàm xử lý khi có giao dịch chưa hoàn tất
   const onIncompletePaymentFound = (payment) => {
@@ -24,6 +23,7 @@ function App() {
 
   // Xử lý đăng nhập
   const handleLogin = async () => {
+    setLoadingLogin(true);
     try {
       const scopes = ["username", "payments"]; // Quyền cần lấy
       const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
@@ -32,42 +32,9 @@ function App() {
       alert(`Xin chào ${authResult.user.username}!`);
     } catch (error) {
       console.error("❌ Login failed:", error);
-    }
-  };
-
-  // Tạo thanh toán test
-  const handleTestPayment = async () => {
-    if (!piUser) {
-      alert("Bạn cần đăng nhập trước!");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/create-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: piUser.username,
-          amount: 1,
-          memo: "Test payment AgoraPay",
-        }),
-      });
-
-      const data = await res.json();
-      console.log("📦 Payment response:", data);
-
-      if (data && data.paymentId) {
-        setPaymentId(data.paymentId);
-        alert(`Thanh toán test đã tạo, ID: ${data.paymentId}`);
-      } else {
-        alert("Không thể tạo thanh toán test");
-      }
-    } catch (err) {
-      console.error("❌ Error creating payment:", err);
-      alert("Lỗi khi tạo thanh toán");
+      alert("Đăng nhập thất bại, vui lòng thử lại.");
     } finally {
-      setLoading(false);
+      setLoadingLogin(false);
     }
   };
 
@@ -93,23 +60,18 @@ function App() {
       {!piUser ? (
         <button
           onClick={handleLogin}
+          disabled={loadingLogin}
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-xl shadow"
         >
-          Login with Pi
+          {loadingLogin ? "Logging in..." : "Login with Pi"}
         </button>
       ) : (
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center space-y-4 w-full max-w-md">
           <p className="text-green-600 font-semibold">Logged in as @{piUser.username}</p>
-          <button
-            onClick={handleTestPayment}
-            disabled={loading}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-xl shadow"
-          >
-            {loading ? "Processing..." : "Test Payment 1π"}
-          </button>
-          {paymentId && (
-            <p className="text-sm text-gray-600">Payment ID: {paymentId}</p>
-          )}
+          
+          {/* Component Test Payment */}
+          <TestPayment piUser={piUser} />
+
         </div>
       )}
 
