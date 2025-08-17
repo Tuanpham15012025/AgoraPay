@@ -1,51 +1,53 @@
+// api/approve.js
+const PI_API_URL = "https://api.minepi.com/v2";
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
     const { paymentId } = req.body || {};
-    if (!paymentId) return res.status(400).json({ error: 'paymentId required' });
+    if (!paymentId) return res.status(400).json({ error: "Missing paymentId" });
 
-    const base = 'https://api.minepi.com';
-    const headers = {
-      'Authorization': `Key ${process.env.PI_API_KEY}`,
-      'Content-Type': 'application/json'
-    };
+    const apiKey = process.env.PI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "Server misconfigured: missing PI_API_KEY" });
 
-    // 1) Fetch payment to validate
-    const getResp = await fetch(`${base}/v2/payments/${paymentId}`, { headers });
+    // 1) Lấy chi tiết payment để xác thực (số tiền/memo khớp kỳ vọng)
+    const getResp = await fetch(`${PI_API_URL}/payments/${paymentId}`, {
+      headers: { Authorization: `Key ${apiKey}` },
+    });
     if (!getResp.ok) {
-      const t = await getResp.text();
-      return res.status(400).json({ error: 'Failed to fetch payment', details: t });
+      const err = await getResp.text();
+      console.error("GET payment failed:", err);
+      return res.status(502).json({ error: "Failed to fetch payment" });
     }
     const payment = await getResp.json();
 
-    // Basic validations
-    const expectedAmount = Number(process.env.EXPECTED_AMOUNT || '1');
-    if (payment?.app?.id && process.env.PI_APP_ID && payment.app.id !== process.env.PI_APP_ID) {
-      return res.status(403).json({ error: 'App ID mismatch' });
-    }
-    if (Number(payment?.amount) !== expectedAmount) {
-      return res.status(400).json({ error: 'Amount mismatch' });
-    }
-    if (payment?.status !== 'pending') {
-      return res.status(400).json({ error: `Unexpected status: ${payment?.status}` });
+    const expected = Number(process.env.EXPECTED_AMOUNT || "1");
+    const paidAmount =
+      typeof payment?.amount !== "undefined"
+        ? Number(payment.amount)
+        : Number(payment?.data?.amount ?? NaN);
+
+    if (Number.isNaN(paidAmount) || paidAmount !== expected) {
+      console.error("Amount mismatch:", { expected, paidAmount });
+      return res.status(400).json({ error: "Amount mismatch" });
     }
 
-    // 2) Approve payment
-    const approveResp = await fetch(`${base}/v2/payments/${paymentId}/approve`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({})
+    // 2) Approve
+    const approveResp = await fetch(`${PI_API_URL}/payments/${paymentId}/approve`, {
+      method: "POST",
+      headers: { Authorization: `Key ${apiKey}` },
     });
+    if (!approveResp.ok) {
+      const err = await approveResp.text();
+      console.error("Approve failed:", err);
+      return res.status(502).json({ error: "Approve request failed" });
+    }
 
     const approveJson = await approveResp.json().catch(() => ({}));
-    if (!approveResp.ok) {
-      return res.status(400).json({ error: 'Approve failed', details: approveJson });
-    }
-
     return res.status(200).json({ ok: true, approve: approveJson });
   } catch (e) {
-    console.error(e);
-    return res.status(500).json({ error: 'Server error', details: e?.message });
+    console.error("approve error:", e);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
