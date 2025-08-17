@@ -4,10 +4,13 @@ import "./App.css";
 
 function App() {
   const [piUser, setPiUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [paymentId, setPaymentId] = useState(null);
 
   // Hàm xử lý khi có giao dịch chưa hoàn tất
   const onIncompletePaymentFound = (payment) => {
-    console.log("Incomplete payment found:", payment);
+    console.log("⚠️ Incomplete payment found:", payment);
+    alert("Bạn có giao dịch chưa hoàn tất, vui lòng kiểm tra lại!");
   };
 
   // Khởi tạo Pi SDK
@@ -22,13 +25,49 @@ function App() {
   // Xử lý đăng nhập
   const handleLogin = async () => {
     try {
-      const scopes = ["username", "payments"]; // Quyền muốn lấy
+      const scopes = ["username", "payments"]; // Quyền cần lấy
       const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
-      console.log("Login success:", authResult);
+      console.log("✅ Login success:", authResult);
       setPiUser(authResult.user);
       alert(`Xin chào ${authResult.user.username}!`);
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("❌ Login failed:", error);
+    }
+  };
+
+  // Tạo thanh toán test
+  const handleTestPayment = async () => {
+    if (!piUser) {
+      alert("Bạn cần đăng nhập trước!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/create-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: piUser.username,
+          amount: 1,
+          memo: "Test payment AgoraPay",
+        }),
+      });
+
+      const data = await res.json();
+      console.log("📦 Payment response:", data);
+
+      if (data && data.paymentId) {
+        setPaymentId(data.paymentId);
+        alert(`Thanh toán test đã tạo, ID: ${data.paymentId}`);
+      } else {
+        alert("Không thể tạo thanh toán test");
+      }
+    } catch (err) {
+      console.error("❌ Error creating payment:", err);
+      alert("Lỗi khi tạo thanh toán");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,7 +76,8 @@ function App() {
       <img src="/logo512.png" alt="AgoraPay Logo" className="w-24 h-24 mb-4" />
       <h1 className="text-4xl font-bold text-indigo-700 mb-2">Welcome to AgoraPay</h1>
       <p className="text-lg text-gray-700 max-w-xl text-center mb-6">
-        AgoraPay is a peer-to-peer Web3 payment app built on Pi Network. Seamlessly send and receive Pi using secure Pi SDK authentication.
+        AgoraPay is a peer-to-peer Web3 payment app built on Pi Network.
+        Seamlessly send and receive Pi using secure Pi SDK authentication.
       </p>
 
       <div className="bg-white rounded-2xl shadow-md p-6 w-full max-w-2xl mb-6">
@@ -58,7 +98,19 @@ function App() {
           Login with Pi
         </button>
       ) : (
-        <p className="text-green-600 font-semibold">Logged in as @{piUser.username}</p>
+        <div className="flex flex-col items-center space-y-4">
+          <p className="text-green-600 font-semibold">Logged in as @{piUser.username}</p>
+          <button
+            onClick={handleTestPayment}
+            disabled={loading}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-xl shadow"
+          >
+            {loading ? "Processing..." : "Test Payment 1π"}
+          </button>
+          {paymentId && (
+            <p className="text-sm text-gray-600">Payment ID: {paymentId}</p>
+          )}
+        </div>
       )}
 
       <footer className="mt-10 text-sm text-gray-500">
