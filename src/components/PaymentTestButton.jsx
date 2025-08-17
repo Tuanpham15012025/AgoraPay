@@ -1,10 +1,11 @@
-// src/components/PaymentTestButton.js
+// src/components/PaymentTestButton.jsx
 import { useEffect, useState } from "react";
 import { initPi } from "../lib/pi";
 
 export default function PaymentTestButton() {
   const [pi, setPi] = useState(null);
   const [status, setStatus] = useState("");
+  const API_BASE = import.meta.env.VITE_BRIDGE_API || ""; // cùng domain -> để trống
 
   useEffect(() => {
     setPi(initPi());
@@ -12,45 +13,52 @@ export default function PaymentTestButton() {
 
   const startPayment = async () => {
     if (!pi) {
-      setStatus("⚠️ Pi SDK not available. Open in Pi Browser.");
+      setStatus("⚠️ Pi SDK not available. Please open in Pi Browser.");
       return;
     }
 
     try {
-      setStatus("🔄 Creating payment...");
+      setStatus("🔐 Logging in...");
+      const auth = await pi.authenticate(
+        ["username", "payments"],
+        (pmt) => console.log("Incomplete payment found:", pmt)
+      );
+      const username = auth?.user?.username;
+      if (!username) throw new Error("No Pi username from auth.");
 
+      setStatus("🧾 Preparing payment...");
       const amount = Number(import.meta.env.VITE_TEST_AMOUNT || "1");
       const memo = "Test payment from AgoraPay";
 
-      // --- gọi backend để tạo payment ---
-      const res = await fetch(
-        `${import.meta.env.VITE_BRIDGE_API}/create-payment`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount, memo, metadata: { source: "ui" } }),
-        }
-      );
+      // (Tùy chọn) Gọi server để ràng buộc amount/memo từ phía server
+      // Server sẽ trả lại payload để đưa vào Pi.createPayment
+      const createRes = await fetch(`${API_BASE}/api/create-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          memo,
+          metadata: { type: "test", source: "agorapay-ui", username },
+        }),
+      });
+      if (!createRes.ok) throw new Error("create-payment failed");
+      const paymentInput = await createRes.json();
 
-      if (!res.ok) throw new Error("Server create-payment failed");
-      const paymentData = await res.json();
-      console.log("Payment created:", paymentData);
-
-      // --- gọi Pi SDK ---
-      await pi.createPayment(paymentData, {
+      setStatus("💳 Opening Pi payment UI...");
+      await pi.createPayment(paymentInput, {
         onReadyForServerApproval: async (paymentId) => {
           setStatus("⏳ Approving on server...");
-          const res = await fetch(`${import.meta.env.VITE_BRIDGE_API}/approve`, {
+          const res = await fetch(`${API_BASE}/api/approve`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ paymentId }),
           });
           if (!res.ok) throw new Error("Server approval failed");
-          setStatus("✅ Approved. Awaiting blockchain tx...");
+          setStatus("✅ Approved. Waiting for blockchain tx...");
         },
         onReadyForServerCompletion: async (paymentId, txid) => {
           setStatus("⏳ Completing on server...");
-          const res = await fetch(`${import.meta.env.VITE_BRIDGE_API}/complete`, {
+          const res = await fetch(`${API_BASE}/api/complete`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ paymentId, txid }),
@@ -74,12 +82,10 @@ export default function PaymentTestButton() {
   };
 
   return (
-    <div className="card">
+    <div className="card" style={{ maxWidth: 560, margin: "0 auto" }}>
       <h2>Step 11: Process a Transaction</h2>
-      <button className="btn primary" onClick={startPayment}>
-        Pay 1 Test-Pi
-      </button>
-      <p className="muted">Runs in Pi Browser with Testnet funds.</p>
+      <button className="btn primary" onClick={startPayment}>Test Payment 1π</button>
+      <p className="muted">Use Pi Browser (Testnet funds).</p>
       {status && <p className="status">{status}</p>}
     </div>
   );
