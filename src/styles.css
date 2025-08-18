@@ -1,13 +1,12 @@
-:root { font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; }
-body { margin: 0; background: #0b0b10; color: #eaeaf2; }
-.container { max-width: 860px; margin: 0 auto; padding: 24px; }
-header { text-align: center; margin-bottom: 24px; }
-.logo { width: 72px; height: 72px; margin: 12px auto; display: block; }
-.card { background: #14141d; border: 1px solid #2a2a3a; padding: 16px; border-radius: 16px; margin-bottom: 16px; }
-.btn { padding: 10px 16px; border-radius: 12px; border: none; cursor: pointer; }
-.btn.primary { background: #6b5cff; color: white; }
-.error { color: #ff6b6b; }
-.status { margin-top: 8px; opacity: 0.9; }
-.muted { opacity: 0.7; font-size: 0.9rem; }
-footer { text-align: center; margin-top: 24px; opacity: 0.85; }
-footer a { color: #9aa0ff; text-decoration: none; }
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin-top: 50px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 10px;
+}
