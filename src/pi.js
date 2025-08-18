@@ -5,7 +5,6 @@ export const initPi = () => {
         const pi = window.Pi.init({ version: "2.0", sandbox: true });
         resolve(pi);
       } else {
-        // Chưa load, thử lại sau 100ms
         setTimeout(checkPi, 100);
       }
     };
