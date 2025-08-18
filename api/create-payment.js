@@ -1,5 +1,4 @@
 // api/create-payment.js
-import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -14,7 +13,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing Pi user token" });
     }
 
-    // 2. Xác thực user Pi với Pi API
+    // 2. Xác thực user Pi (dùng fetch global, không cần node-fetch)
     let user;
     try {
       const verifyRes = await fetch("https://api.minepi.com/v2/me", {
@@ -31,11 +30,11 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: "Failed to reach Pi API", details: err.message });
     }
 
-    // 3. Tính toán giá động (mặc định 0.5 Pi nếu amount trống)
+    // 3. Tính toán giá động
     const dynamicPrice = Number(amount) > 0 ? Number(amount) : 0.5;
 
-    // 4. Tạo payload trả về frontend
-    const payload = {
+    // 4. Trả payload
+    return res.status(200).json({
       status: "success",
       amount: dynamicPrice,
       memo: memo || `Payment for user ${user.username || "unknown"}`,
@@ -44,9 +43,7 @@ export default async function handler(req, res) {
       paymentUrl: `https://sandbox.agorapay.vn/pay?amount=${dynamicPrice}&memo=${encodeURIComponent(
         memo || ""
       )}`,
-    };
-
-    return res.status(200).json(payload);
+    });
   } catch (e) {
     console.error("create-payment error:", e);
     return res.status(500).json({ error: "Internal server error", details: e.message });
