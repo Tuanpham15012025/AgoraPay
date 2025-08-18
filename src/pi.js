@@ -1,12 +1,14 @@
-// src/pi.js
 export const initPi = () => {
-  if (!window.Pi) {
-    console.error("Pi SDK chưa được load. Kiểm tra script trong index.html");
-    return null;
-  }
-
-  return window.Pi.init({
-    version: "2.0",
-    sandbox: true, // false khi lên mainnet
+  return new Promise((resolve, reject) => {
+    const checkPi = () => {
+      if (window.Pi) {
+        const pi = window.Pi.init({ version: "2.0", sandbox: true });
+        resolve(pi);
+      } else {
+        // Chưa load, thử lại sau 100ms
+        setTimeout(checkPi, 100);
+      }
+    };
+    checkPi();
   });
 };
