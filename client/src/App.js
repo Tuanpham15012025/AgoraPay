@@ -1,53 +1,62 @@
 import React, { useState } from "react";
 
 function App() {
-  const [amount, setAmount] = useState("");
-  const [memo, setMemo] = useState("");
-  const [response, setResponse] = useState(null);
+  const [user, setUser] = useState(null);
+  const [paymentId, setPaymentId] = useState(null);
+  const [status, setStatus] = useState("");
 
-  const handlePayment = async () => {
+  // Đăng nhập bằng Pi Network SDK
+  const loginWithPi = async () => {
     try {
-      const res = await fetch("/api/create-payment", {
+      const scopes = ["payments"];
+      const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
+      console.log("Auth result:", authResult);
+      setUser(authResult.user);
+    } catch (err) {
+      console.error("Login failed", err);
+    }
+  };
+
+  // Callback nếu có giao dịch chưa hoàn tất
+  const onIncompletePaymentFound = (payment) => {
+    console.log("Incomplete payment:", payment);
+  };
+
+  // Gọi API backend để tạo payment
+  const createPayment = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/create-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, memo }),
+        body: JSON.stringify({
+          amount: 1,
+          memo: "Test Payment 1π",
+          metadata: { userId: user.uid }
+        })
       });
 
       const data = await res.json();
-      setResponse(data);
-    } catch (error) {
-      setResponse({ error: error.message });
+      console.log("Payment created:", data);
+      setPaymentId(data.paymentId);
+      setStatus("Đang chờ Pi xác nhận...");
+    } catch (err) {
+      console.error("Error creating payment", err);
+      setStatus("Lỗi khi tạo payment!");
     }
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>AgoraPay Demo</h1>
-      <input
-        type="number"
-        placeholder="Nhập số tiền"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
-      <br />
-      <input
-        type="text"
-        placeholder="Nội dung"
-        value={memo}
-        onChange={(e) => setMemo(e.target.value)}
-      />
-      <br />
-      <button onClick={handlePayment}>Tạo thanh toán</button>
-
-      {response && (
-        <div style={{ marginTop: "1rem" }}>
-          <pre>{JSON.stringify(response, null, 2)}</pre>
-          {response.paymentUrl && (
-            <a href={response.paymentUrl} target="_blank" rel="noreferrer">
-              👉 Thanh toán ngay
-            </a>
-          )}
-        </div>
+    <div style={{ padding: "20px" }}>
+      <h1>AgoraPay Test</h1>
+      {!user ? (
+        <button onClick={loginWithPi}>🔑 Login with Pi</button>
+      ) : (
+        <>
+          <p>Xin chào {user.username}!</p>
+          <button onClick={createPayment}>💳 Test Payment 1π</button>
+          {paymentId && <p>Payment ID: {paymentId}</p>}
+          <p>{status}</p>
+        </>
       )}
     </div>
   );
