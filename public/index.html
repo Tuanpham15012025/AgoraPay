@@ -10,5 +10,12 @@
 
     <!-- Pi SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script>
+      // Khởi tạo Pi SDK
+      Pi.init({
+        version: "2.0",
+        sandbox: true, // true: test môi trường sandbox, false: production
+      });
+    </script>
   </body>
 </html>
